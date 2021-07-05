@@ -4,9 +4,15 @@
 
 using System;
 using System.Collections.Generic;
+#if WINUI3UWP
+using DynamicData.Binding.WinUI3UWP;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Interop;
+#else
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+#endif
 using System.Reactive.Disposables;
 
 namespace DynamicData.Binding
@@ -144,14 +150,21 @@ namespace DynamicData.Binding
         {
             _suspendCount = true;
             _suspendNotifications = true;
-
+#if WINUI3UWP
+            var copyArray = new TestBindableVector<T>(this);
+#endif
             return Disposable.Create(
                 () =>
                     {
                         _suspendCount = false;
                         _suspendNotifications = false;
                         OnPropertyChanged(new PropertyChangedEventArgs("Count"));
+#if WINUI3UWP
+                        TestBindableVector<T> newItems = new TestBindableVector<T>(this);
+                        OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset, newItems, copyArray, 0, 0));
+#else
                         OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+#endif
                     });
         }
 
